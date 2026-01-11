@@ -1,26 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* FlavorTown Palette */
+  --color-bg-beige: #F3E5D0;
+  --color-text-brown: #5D4037;
+  --color-accent-blue: #5D9CEC;
+  --color-accent-blue-dark: #4A89DC;
+  --color-accent-green: #8BC34A;
+  --color-card-bg: #FCF8F3;
+  --color-card-border: rgba(255, 255, 255, 0.6);
+  --color-shadow: #BCAAA4;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--color-bg-beige);
+  --color-foreground: var(--color-text-brown);
+  --font-sans: var(--font-nunito), ui-rounded, 'Varela Round', sans-serif;
+  
+  --color-fl-beige: var(--color-bg-beige);
+  --color-fl-brown: var(--color-text-brown);
+  --color-fl-blue: var(--color-accent-blue);
+  --color-fl-blue-dark: var(--color-accent-blue-dark);
+  --color-fl-green: var(--color-accent-green);
+  --color-fl-card: var(--color-card-bg);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg-beige);
+  color: var(--color-text-brown);
+  /* Checkered Tablecloth Pattern */
+  background-image: 
+    linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%), 
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.15) 75%), 
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.15) 75%);
+  background-size: 40px 40px;
+  background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+}
+
+/* Custom Utilities for "Tactile" UI */
+.btn-chunky {
+  transition: all 0.1s;
+  box-shadow: 0px 4px 0px var(--color-shadow);
+}
+.btn-chunky:active {
+  transform: translateY(2px);
+  box-shadow: 0px 2px 0px var(--color-shadow);
+}
+
+.card-panel {
+  background: var(--color-card-bg);
+  border-radius: 16px;
+  border: 2px solid var(--color-card-border);
+  box-shadow: 0 4px 6px rgba(93, 64, 55, 0.05), inset 0 2px 0 rgba(255, 255, 255, 0.8);
 }
