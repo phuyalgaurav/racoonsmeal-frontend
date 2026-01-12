@@ -193,20 +193,6 @@ export async function getCurrentUser(): Promise<User> {
   return response.data;
 }
 
-// Verify Token: POST /api/users/token/verify/
-export async function verifyToken(): Promise<boolean> {
-  try {
-    const token = Cookies.get('access_token');
-    if (!token) return false;
-    
-    await api.post('/api/users/token/verify/', { token });
-    return true;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_error) {
-    return false;
-  }
-}
-
 // // Example: Protected API call
 // export async function getProtectedData() {
 //   const response = await api.get('/api/protected-endpoint/');

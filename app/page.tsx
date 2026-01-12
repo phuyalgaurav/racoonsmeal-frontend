@@ -21,7 +21,7 @@ export default function Home() {
         <div className="card-panel max-w-2xl w-full p-10 text-center space-y-8 bg-white/90 backdrop-blur-sm">
           <h1 className="text-5xl font-extrabold text-fl-brown mb-2 tracking-tight">Racoonsmeal</h1>
           <p className="text-xl text-fl-brown/80 mb-8 max-w-md mx-auto font-medium">
-            The coziest way to order food. Collect ingredients, unlock recipes, and level up your kitchen!
+            Create random meals plans, share meal plans with everyone, track your eating habits !
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
