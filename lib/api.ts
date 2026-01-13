@@ -4,6 +4,23 @@ import Cookies from 'js-cookie';
 // Base API URL - reads from env variable or defaults to localhost
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+const USERNAME_COOKIE_KEY = 'username';
+
+function setStoredUsername(username: string) {
+  Cookies.set(USERNAME_COOKIE_KEY, username, { expires: 7 });
+}
+
+function getStoredUsername(): string | undefined {
+  return Cookies.get(USERNAME_COOKIE_KEY);
+}
+
+function clearAuthCookies() {
+  Cookies.remove('access_token');
+  Cookies.remove('refresh_token');
+  Cookies.remove(USERNAME_COOKIE_KEY);
+  delete api.defaults.headers.common.Authorization;
+}
+
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_URL,
@@ -37,7 +54,8 @@ const processQueue = (error: unknown, token: string | null = null) => {
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = Cookies.get('access_token');
-    if (token && config.headers) {
+    if (token) {
+      config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -95,6 +113,8 @@ api.interceptors.response.use(
         
         // Save new access token
         Cookies.set('access_token', access, { expires: 1 }); // 1 day
+
+        api.defaults.headers.common.Authorization = `Bearer ${access}`;
         
         // Update authorization header
         if (originalRequest.headers) {
@@ -111,8 +131,7 @@ api.interceptors.response.use(
         // Refresh failed, clear tokens and redirect to login
         processQueue(refreshError, null);
         isRefreshing = false;
-        Cookies.remove('access_token');
-        Cookies.remove('refresh_token');
+        clearAuthCookies();
         
         // Redirect to login (you can customize this)
         if (typeof window !== 'undefined') {
@@ -145,11 +164,38 @@ export interface LoginData {
 }
 
 export interface User {
+  id?: number;
   username: string;
-  email: string;
+  email?: string;
   first_name?: string;
   last_name?: string;
   date_of_birth?: string;
+}
+
+export interface UserProfileNested {
+  id: number;
+  bio?: string;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  profile_picture?: string | null;
+  user: User;
+  followers: User[];
+}
+
+async function ensureUserProfileExists(username: string): Promise<void> {
+  // Some backends require explicitly creating a profile resource.
+  // If it's already created, the POST may 400/409; we intentionally ignore those.
+  try {
+    await api.post(
+      `/api/users/profile/${encodeURIComponent(username)}/`,
+      {},
+      {
+        validateStatus: (status) => status >= 200 && status < 500,
+      }
+    );
+  } catch {
+    // Ignore errors
+  }
 }
 
 export interface AuthTokens {
@@ -165,16 +211,30 @@ export async function register(data: RegisterData) {
 
 // Login: POST /api/users/login/
 // Note: This only returns tokens, so we fetch the user profile immediately after
-export async function login(data: LoginData): Promise<{ tokens: AuthTokens; user: User }> {
+export async function login(data: LoginData): Promise<{ tokens: AuthTokens; user: User | null }> {
   const response = await api.post<AuthTokens>('/api/users/login/', data);
   
   if (response.data.access && response.data.refresh) {
     Cookies.set('access_token', response.data.access, { expires: 1 });
     Cookies.set('refresh_token', response.data.refresh, { expires: 7 });
+    setStoredUsername(data.username);
+
+    api.defaults.headers.common.Authorization = `Bearer ${response.data.access}`;
     
     // Fetch user profile immediately after login
-    const user = await getCurrentUser();
-    return { tokens: response.data, user };
+    try {
+      const user = await getCurrentUser();
+      return { tokens: response.data, user };
+    } catch (err) {
+      // Some backends don't auto-create a profile row on register.
+      // If profile doesn't exist yet (404), still treat login as successful.
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        await ensureUserProfileExists(data.username);
+        const user = await getCurrentUser();
+        return { tokens: response.data, user };
+      }
+      throw err;
+    }
   }
   
   throw new Error('Invalid response from login server');
@@ -183,14 +243,34 @@ export async function login(data: LoginData): Promise<{ tokens: AuthTokens; user
 // Logout
 export async function logout(): Promise<void> {
   // Your schema doesn't show a logout endpoint, so we just clear cookies
-  Cookies.remove('access_token');
-  Cookies.remove('refresh_token');
+  clearAuthCookies();
 }
 
 // Get Profile: GET /api/users/profile/
-export async function getCurrentUser(): Promise<User> {
-  const response = await api.get<User>('/api/users/profile/');
-  return response.data;
+export async function getCurrentUser(): Promise<User | null> {
+  const username = getStoredUsername();
+  if (!username) {
+    // We have a token but don't know what user to query.
+    return null;
+  }
+
+  const response = await api.get<UserProfileNested>(
+    `/api/users/profile/${encodeURIComponent(username)}/`,
+    {
+      // A missing profile is normal if the backend doesn't auto-create it.
+      // Keep 401 as a rejected response so the refresh-token interceptor can run.
+      validateStatus: (status) => (status >= 200 && status < 300) || status === 404,
+    }
+  );
+
+  if (response.status === 404) {
+    await ensureUserProfileExists(username);
+    const retry = await api.get<UserProfileNested>(
+      `/api/users/profile/${encodeURIComponent(username)}/`
+    );
+    return retry.data.user;
+  }
+  return response.data.user;
 }
 
 // // Example: Protected API call

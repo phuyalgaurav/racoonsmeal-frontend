@@ -30,6 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  const isAuthenticated = !!Cookies.get('access_token');
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -44,11 +46,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const userData = await getCurrentUser();
-      setUser(userData);
+      if (userData) {
+        setUser(userData);
+      } else {
+        const username = Cookies.get('username');
+        setUser(username ? ({ username } as User) : null);
+      }
     } catch (error) {
       console.error('Auth check failed:', error);
       Cookies.remove('access_token');
       Cookies.remove('refresh_token');
+      Cookies.remove('username');
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (data: LoginData) => {
     try {
       const { user } = await loginApi(data);
-      setUser(user);
+      setUser(user ?? ({ username: data.username } as User));
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -88,7 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     try {
       const userData = await getCurrentUser();
-      setUser(userData);
+      if (userData) {
+        setUser(userData);
+      }
     } catch (error) {
       console.error('Failed to refresh user:', error);
     }
@@ -98,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated,
         isLoading,
         login,
         register,
