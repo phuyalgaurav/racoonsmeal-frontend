@@ -173,13 +173,58 @@ export interface User {
 }
 
 export interface UserProfileNested {
-  id: number;
-  bio?: string;
-  height_cm?: number | null;
-  weight_kg?: number | null;
-  profile_picture?: string | null;
   user: User;
+  id: number;
+  bio: string;
+  age: number;
+  gender: string;
+  height_cm: number;
+  weight_kg: number;
+  activity_level: string;
+  goal: string;
+  profile_picture?: string | null;
   followers: User[];
+}
+
+export interface UserProfileCreated{
+  profile_exists: boolean;
+}
+
+export interface CreateUserProfileData {
+  bio: string;
+  age: number;
+  gender: 'male' | 'female';
+  height_cm: number;
+  weight_kg: number;
+  activity_level: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+  goal: 'cut' | 'maintain' | 'gain';
+  profile_picture?: File | null;
+}
+
+export async function createUserProfile(username: string, data: CreateUserProfileData) {
+  const formData = new FormData();
+  formData.append('bio', data.bio);
+  formData.append('age', data.age.toString());
+  formData.append('gender', data.gender);
+  formData.append('height_cm', data.height_cm.toString());
+  formData.append('weight_kg', data.weight_kg.toString());
+  formData.append('activity_level', data.activity_level);
+  formData.append('goal', data.goal);
+  
+  if (data.profile_picture) {
+    formData.append('profile_picture', data.profile_picture);
+  }
+
+  const response = await api.post(
+    `/api/users/profile/${encodeURIComponent(username)}/`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return response.data;
 }
 
 async function ensureUserProfileExists(username: string): Promise<void> {
@@ -226,14 +271,13 @@ export async function login(data: LoginData): Promise<{ tokens: AuthTokens; user
       const user = await getCurrentUser();
       return { tokens: response.data, user };
     } catch (err) {
-      // Some backends don't auto-create a profile row on register.
-      // If profile doesn't exist yet (404), still treat login as successful.
-      if (axios.isAxiosError(err) && err.response?.status === 404) {
-        await ensureUserProfileExists(data.username);
-        const user = await getCurrentUser();
-        return { tokens: response.data, user };
-      }
-      throw err;
+      // Even if profile fetch fails, we are logged in
+      console.error('Failed to fetch user profile after login', err);
+      // Return a basic user object from the login data if profile fetch fails
+      return { 
+        tokens: response.data, 
+        user: { username: data.username } 
+      };
     }
   }
   
@@ -264,14 +308,24 @@ export async function getCurrentUser(): Promise<User | null> {
   );
 
   if (response.status === 404) {
-    await ensureUserProfileExists(username);
-    const retry = await api.get<UserProfileNested>(
-      `/api/users/profile/${encodeURIComponent(username)}/`
-    );
-    return retry.data.user;
+    // Return null if profile not found, so we can handle it in the UI (show creation modal)
+    return null;
   }
   return response.data.user;
 }
+
+export async function getIsUserProfileCreated(): Promise<UserProfileCreated> {
+  const username = getStoredUsername();
+  if (!username) {
+    throw new Error('No stored username found');
+  }
+  
+  const response = await api.get<UserProfileCreated>(`api/users/profile-exists/${username}/`, {
+  });
+
+  return response.data;
+}
+
 
 // // Example: Protected API call
 // export async function getProtectedData() {

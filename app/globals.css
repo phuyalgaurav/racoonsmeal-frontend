@@ -1,56 +1,97 @@
 @import "tailwindcss";
 
 :root {
-  /* FlavorTown Palette */
-  --color-bg-beige: #F3E5D0;
-  --color-text-brown: #5D4037;
-  --color-accent-blue: #5D9CEC;
-  --color-accent-blue-dark: #4A89DC;
-  --color-accent-green: #8BC34A;
-  --color-card-bg: #FCF8F3;
-  --color-card-border: rgba(255, 255, 255, 0.6);
-  --color-shadow: #BCAAA4;
+  /* 
+   * COZY KITCHEN DESIGN THEME (Strict Implementation)
+   */
+
+  /* Specified Palette */
+  --bg-canvas: #F7E9D1; /* Slightly lighter beige, warmer than before */
+  --bg-sidebar: #4A81B8;
+  --bg-card: #FFFBF0; /* Warm Cream (not pure white) */
+  --text-main: #4A3B32;
+  --border-color: #4A3B32;
+  --accent-red: #D9534F;
+  --accent-green: #8BA649;
+  
+  /* Derived/Auxiliary */
+  --color-white: #FFFFFF;
+  --color-blue-light: #EEF4FA;
 }
 
 @theme inline {
-  --color-background: var(--color-bg-beige);
-  --color-foreground: var(--color-text-brown);
-  --font-sans: var(--font-nunito), ui-rounded, 'Varela Round', sans-serif;
+  /* Theme Colors */
+  --color-canvas: var(--bg-canvas);
+  --color-sidebar: var(--bg-sidebar);
+  --color-card: var(--bg-card);
+  --color-main: var(--text-main);
+  --color-border: var(--border-color);
+  --color-red: var(--accent-red);
+  --color-green: var(--accent-green);
+  --color-blue-light: var(--color-blue-light);
   
-  --color-fl-beige: var(--color-bg-beige);
-  --color-fl-brown: var(--color-text-brown);
-  --color-fl-blue: var(--color-accent-blue);
-  --color-fl-blue-dark: var(--color-accent-blue-dark);
-  --color-fl-green: var(--color-accent-green);
-  --color-fl-card: var(--color-card-bg);
+  /* Fonts */
+  --font-header: var(--font-nunito), 'Fredoka One', cursive, sans-serif;
+  --font-body: 'Quicksand', 'Varela Round', sans-serif;
 }
 
 body {
-  background-color: var(--color-bg-beige);
-  color: var(--color-text-brown);
-  /* Checkered Tablecloth Pattern */
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  position: relative;
+  min-height: 100vh;
+
+  /* Checkerboard Tablecloth Pattern */
   background-image: 
-    linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%), 
-    linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%), 
-    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.15) 75%), 
-    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.15) 75%);
-  background-size: 40px 40px;
-  background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+    linear-gradient(45deg, rgba(74, 59, 50, 0.08) 25%, transparent 25%), 
+    linear-gradient(-45deg, rgba(74, 59, 50, 0.08) 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, rgba(74, 59, 50, 0.08) 75%), 
+    linear-gradient(-45deg, transparent 75%, rgba(74, 59, 50, 0.08) 75%);
+  background-size: 60px 60px;
+  background-position: 0 0, 0 30px, 30px -30px, -30px 0px;
 }
 
-/* Custom Utilities for "Tactile" UI */
-.btn-chunky {
-  transition: all 0.1s;
-  box-shadow: 0px 4px 0px var(--color-shadow);
-}
-.btn-chunky:active {
-  transform: translateY(2px);
-  box-shadow: 0px 2px 0px var(--color-shadow);
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-header);
+  color: var(--text-main);
 }
 
-.card-panel {
-  background: var(--color-card-bg);
-  border-radius: 16px;
-  border: 2px solid var(--color-card-border);
-  box-shadow: 0 4px 6px rgba(93, 64, 55, 0.05), inset 0 2px 0 rgba(255, 255, 255, 0.8);
+/* 
+ * COMPONENT UTILITIES 
+ */
+
+/* 3D Action Button Base */
+.btn-3d {
+  @apply inline-flex items-center justify-center font-header font-bold transition-all relative;
+  border-bottom-width: 4px;
 }
+.btn-3d:active {
+  border-bottom-width: 0px;
+  transform: translateY(4px);
+  margin-top: 4px;
+}
+
+/* Chunky Inputs */
+.input-chunky {
+  @apply h-12 w-full px-4 bg-blue-light rounded-lg border-2 border-main font-body text-main transition-colors;
+}
+.input-chunky:focus {
+  @apply outline-none border-sidebar bg-white;
+}
+
+/* Card Base */
+.card-base {
+  @apply bg-card border-2 border-main rounded-2xl shadow-xl;
+}
+
+@keyframes speaking-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-speaking {
+  animation: speaking-bounce 0.8s ease-in-out infinite;
+}
+
+
